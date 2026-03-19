@@ -1,103 +1,103 @@
 # Planner Desktop
 
-Flutter로 만든 데스크탑 플래너 앱입니다.
-월간 캘린더, 원형 시간표, 체크리스트를 한 화면에서 관리할 수 있습니다.
+A desktop planner app built with Flutter.
+Manage your monthly calendar, circular timetable, and checklists all in one place.
 
 ---
 
-## 주요 기능
+## Features
 
-### 홈 (월간 캘린더)
-- 월별 캘린더에서 일정을 한눈에 확인
-- 날짜 클릭 시 오른쪽 패널에 해당 날짜의 상세 정보 표시
-- 일정 추가 시 시작/종료 시간, 색상 지정 가능
-- 날짜별 메모 작성
+### Home (Monthly Calendar)
+- View all schedules at a glance on a monthly calendar
+- Click a date to see its details in the right panel
+- Add schedules with start/end time and custom color
+- Write a memo for each date
 
-### 체크리스트
-- **전역 체크리스트**: 매일 반복되는 루틴 항목 관리 (예: 물 마시기, 운동)
-- **날짜별 체크리스트**: 특정 날짜에만 필요한 항목 추가
-- 전역 항목의 완료 여부는 날짜마다 독립적으로 기록
+### Checklist
+- **Global checklist**: Manage daily recurring routines (e.g. drink water, exercise)
+- **Date-specific checklist**: Add one-off tasks for a particular date
+- Global item completion is tracked independently per date
 
-### 주간 원형 시간표
-- 요일별 원형 타임테이블로 주간 루틴 시각화
-- 각 요일에 항목 추가/삭제
+### Weekly Circular Timetable
+- Visualize weekly routines with a circular timetable per day
+- Add or remove items for each weekday
 
-### 설정
-- **언어**: 한국어 / English
-- **테마**: 라이트 / 다크 / 시스템
-- **타임존**: 서울, 도쿄, 뉴욕, 런던 등 주요 도시 선택 가능
+### Settings
+- **Language**: Korean / English
+- **Theme**: Light / Dark / System
+- **Timezone**: Select from major cities — Seoul, Tokyo, New York, London, and more
 
 ---
 
-## 기술 스택
+## Tech Stack
 
-| 항목 | 내용 |
-|------|------|
+| | |
+|---|---|
 | Framework | Flutter 3.x (Dart) |
 | UI | Material 3 |
-| 상태 관리 | `ChangeNotifier` |
-| 패키지 | `timezone` |
-| 지원 플랫폼 | Windows · macOS · Linux · Android · iOS · Web |
+| State Management | `ChangeNotifier` |
+| Packages | `timezone` |
+| Platforms | Windows · macOS · Linux · Android · iOS · Web |
 
 ---
 
-## 실행 방법
+## Getting Started
 
-### 요구 사항
+### Requirements
 - Flutter SDK `^3.5.3`
 
-### 설치 및 실행
+### Install & Run
 
 ```bash
-# 의존성 설치
+# Install dependencies
 flutter pub get
 
-# 데스크탑 앱 실행 (Windows 기준)
+# Run on desktop (Windows)
 flutter run -d windows
 
-# 다른 플랫폼
+# Other platforms
 flutter run -d macos
 flutter run -d linux
 ```
 
-### 빌드
+### Build
 
 ```bash
-# Windows 릴리즈 빌드
+# Windows release build
 flutter build windows --release
 ```
 
 ---
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 lib/
 ├── main.dart
 ├── app.dart
 ├── core/
-│   ├── app_state.dart        # 전역 상태 관리
-│   ├── app_theme.dart        # 라이트/다크 테마 정의
-│   └── app_strings.dart      # 다국어 텍스트
+│   ├── app_state.dart              # Global state management
+│   ├── app_theme.dart              # Light / dark theme definitions
+│   └── app_strings.dart            # Localized strings
 ├── models/
-│   ├── planner_item.dart     # 일정 데이터 모델
-│   ├── checklist_item.dart   # 체크리스트 항목 모델
-│   └── circle_schedule_item.dart  # 원형 시간표 항목 모델
+│   ├── planner_item.dart           # Schedule data model
+│   ├── checklist_item.dart         # Checklist item model
+│   └── circle_schedule_item.dart   # Circular timetable item model
 ├── screens/
-│   ├── main_shell.dart       # 네비게이션 쉘
-│   ├── home_screen.dart      # 월간 캘린더 화면
-│   ├── checklist_screen.dart # 체크리스트 화면
-│   ├── weekly_screen.dart    # 주간 원형 시간표 화면
-│   └── settings_screen.dart  # 설정 화면
+│   ├── main_shell.dart             # Navigation shell
+│   ├── home_screen.dart            # Monthly calendar screen
+│   ├── checklist_screen.dart       # Checklist screen
+│   ├── weekly_screen.dart          # Weekly circular timetable screen
+│   └── settings_screen.dart        # Settings screen
 ├── widgets/
-│   ├── month_calendar.dart           # 월간 캘린더 위젯
-│   ├── day_detail_panel.dart         # 일정 상세 패널
-│   ├── circular_day_timetable.dart   # 원형 타임테이블
-│   ├── weekly_circle_panel.dart      # 주간 원형 패널
-│   ├── global_checklist_panel.dart   # 전역 체크리스트 패널
-│   ├── planner_clock_time_picker.dart # 시간 선택 위젯
-│   ├── custom_color_picker_dialog.dart # 색상 선택 다이얼로그
-│   └── month_picker_dialog.dart      # 월 선택 다이얼로그
+│   ├── month_calendar.dart                # Monthly calendar widget
+│   ├── day_detail_panel.dart              # Day detail panel
+│   ├── circular_day_timetable.dart        # Circular timetable widget
+│   ├── weekly_circle_panel.dart           # Weekly circular panel
+│   ├── global_checklist_panel.dart        # Global checklist panel
+│   ├── planner_clock_time_picker.dart     # Clock-style time picker
+│   ├── custom_color_picker_dialog.dart    # Color picker dialog
+│   └── month_picker_dialog.dart           # Month picker dialog
 └── utils/
-    └── date_utils.dart       # 날짜 유틸리티
+    └── date_utils.dart             # Date utility functions
 ```
