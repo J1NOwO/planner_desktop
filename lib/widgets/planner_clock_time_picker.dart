@@ -26,10 +26,6 @@ class PlannerClockTime {
       minute: minute ?? this.minute,
     );
   }
-
-  String format(BuildContext context) {
-    return TimeOfDay(hour: hour, minute: minute).format(context);
-  }
 }
 
 Future<PlannerClockTime?> showPlannerClockTimePicker({
@@ -159,8 +155,6 @@ class _PlannerClockTimePickerDialogState
                         activeUnit: _activeUnit,
                         onHourChanged: _setDisplayHour,
                         onMinuteChanged: _setMinute,
-                        onActiveUnitChanged: (unit) =>
-                            setState(() => _activeUnit = unit),
                       ),
                     ),
                   ),
@@ -247,6 +241,51 @@ class _PlannerClockTimePickerDialogState
     );
   }
 
+  Widget _buildValueGrid() {
+    late List<int> values;
+
+    switch (_activeUnit) {
+      case PlannerClockUnit.hour:
+        values = List.generate(12, (i) => i + 1);
+        break;
+      case PlannerClockUnit.minute:
+        values = List.generate(12, (i) => i * 5);
+        break;
+    }
+
+    return GridView.builder(
+      itemCount: values.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.5,
+      ),
+      itemBuilder: (context, index) {
+        final value = values[index];
+        final bool selected = _activeUnit == PlannerClockUnit.hour
+            ? _displayHour == value
+            : _time.minute == value;
+        final String text = _activeUnit == PlannerClockUnit.hour
+            ? value.toString()
+            : value.toString().padLeft(2, '0');
+
+        return _GridValueButton(
+          text: text,
+          selected: selected,
+          onTap: () {
+            if (_activeUnit == PlannerClockUnit.hour) {
+              _setDisplayHour(value);
+            } else {
+              _setMinute(value);
+            }
+          },
+        );
+      },
+    );
+  }
 }
 
 class _ClockPreview extends StatefulWidget {
@@ -255,20 +294,19 @@ class _ClockPreview extends StatefulWidget {
     required this.activeUnit,
     required this.onHourChanged,
     required this.onMinuteChanged,
-    required this.onActiveUnitChanged,
   });
 
   final PlannerClockTime time;
   final PlannerClockUnit activeUnit;
   final Function(int) onHourChanged;
   final Function(int) onMinuteChanged;
-  final Function(PlannerClockUnit) onActiveUnitChanged;
 
   @override
   State<_ClockPreview> createState() => _ClockPreviewState();
 }
 
 class _ClockPreviewState extends State<_ClockPreview> {
+  PlannerClockUnit _draggingUnit = PlannerClockUnit.hour;
   late FocusNode _focusNode;
 
   @override
@@ -286,86 +324,63 @@ class _ClockPreviewState extends State<_ClockPreview> {
     super.dispose();
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      final key = event.logicalKey;
+      final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
 
-    final key = event.logicalKey;
+      final digitKeys = {
+        LogicalKeyboardKey.digit0: 0,
+        LogicalKeyboardKey.digit1: 1,
+        LogicalKeyboardKey.digit2: 2,
+        LogicalKeyboardKey.digit3: 3,
+        LogicalKeyboardKey.digit4: 4,
+        LogicalKeyboardKey.digit5: 5,
+        LogicalKeyboardKey.digit6: 6,
+        LogicalKeyboardKey.digit7: 7,
+        LogicalKeyboardKey.digit8: 8,
+        LogicalKeyboardKey.digit9: 9,
+        LogicalKeyboardKey.numpad0: 0,
+        LogicalKeyboardKey.numpad1: 1,
+        LogicalKeyboardKey.numpad2: 2,
+        LogicalKeyboardKey.numpad3: 3,
+        LogicalKeyboardKey.numpad4: 4,
+        LogicalKeyboardKey.numpad5: 5,
+        LogicalKeyboardKey.numpad6: 6,
+        LogicalKeyboardKey.numpad7: 7,
+        LogicalKeyboardKey.numpad8: 8,
+        LogicalKeyboardKey.numpad9: 9,
+      };
 
-    // ìœ„/ì˜¤ë¥¸ìª½: í˜„ìž¬ ì„ íƒëœ ë‹¨ìœ„ +1
-    if (key == LogicalKeyboardKey.arrowUp ||
-        key == LogicalKeyboardKey.arrowRight) {
-      if (widget.activeUnit == PlannerClockUnit.hour) {
-        final newHour = (widget.time.hour + 1) % 24;
-        widget.onHourChanged(newHour % 12 == 0 ? 12 : newHour % 12);
-      } else {
-        widget.onMinuteChanged((widget.time.minute + 1) % 60);
+      if (key == LogicalKeyboardKey.arrowUp) {
+        if (isShiftPressed) {
+          // Shift + 위: 분 +1
+          widget.onMinuteChanged((widget.time.minute + 1) % 60);
+        } else {
+          // 위: 시 +1
+          final newHour = widget.time.hour + 1;
+          widget.onHourChanged(newHour % 12 == 0 ? 12 : newHour % 12);
+        }
+      } else if (key == LogicalKeyboardKey.arrowDown) {
+        if (isShiftPressed) {
+          // Shift + 아래: 분 -1
+          int newMinute = widget.time.minute - 1;
+          if (newMinute < 0) newMinute = 59;
+          widget.onMinuteChanged(newMinute);
+        } else {
+          // 아래: 시 -1
+          int newHour = widget.time.hour - 1;
+          if (newHour < 0) newHour = 23;
+          widget.onHourChanged(newHour % 12 == 0 ? 12 : newHour % 12);
+        }
+      } else if (digitKeys.containsKey(key)) {
+        // 숫자 키: 시간 직접 입력 (1~9)
+        final digit = digitKeys[key]!;
+        if (digit >= 1 && digit <= 9) {
+          widget.onHourChanged(digit);
+        }
       }
-      return KeyEventResult.handled;
     }
-
-    // ì•„ëž˜/ì™¼ìª½: í˜„ìž¬ ì„ íƒëœ ë‹¨ìœ„ -1
-    if (key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.arrowLeft) {
-      if (widget.activeUnit == PlannerClockUnit.hour) {
-        int newHour = widget.time.hour - 1;
-        if (newHour < 0) newHour = 23;
-        widget.onHourChanged(newHour % 12 == 0 ? 12 : newHour % 12);
-      } else {
-        int newMin = widget.time.minute - 1;
-        if (newMin < 0) newMin = 59;
-        widget.onMinuteChanged(newMin);
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Tab: ì‹œ/ë¶„ ì „í™˜
-    if (key == LogicalKeyboardKey.tab) {
-      widget.onActiveUnitChanged(
-        widget.activeUnit == PlannerClockUnit.hour
-            ? PlannerClockUnit.minute
-            : PlannerClockUnit.hour,
-      );
-      return KeyEventResult.handled;
-    }
-
-    // ìˆ«ìž í‚¤: ì‹œê°„ ì§ì ‘ ìž…ë ¥
-    final digitKeys = {
-      LogicalKeyboardKey.digit0: 0,
-      LogicalKeyboardKey.digit1: 1,
-      LogicalKeyboardKey.digit2: 2,
-      LogicalKeyboardKey.digit3: 3,
-      LogicalKeyboardKey.digit4: 4,
-      LogicalKeyboardKey.digit5: 5,
-      LogicalKeyboardKey.digit6: 6,
-      LogicalKeyboardKey.digit7: 7,
-      LogicalKeyboardKey.digit8: 8,
-      LogicalKeyboardKey.digit9: 9,
-      LogicalKeyboardKey.numpad0: 0,
-      LogicalKeyboardKey.numpad1: 1,
-      LogicalKeyboardKey.numpad2: 2,
-      LogicalKeyboardKey.numpad3: 3,
-      LogicalKeyboardKey.numpad4: 4,
-      LogicalKeyboardKey.numpad5: 5,
-      LogicalKeyboardKey.numpad6: 6,
-      LogicalKeyboardKey.numpad7: 7,
-      LogicalKeyboardKey.numpad8: 8,
-      LogicalKeyboardKey.numpad9: 9,
-    };
-
-    if (digitKeys.containsKey(key)) {
-      final digit = digitKeys[key]!;
-      if (widget.activeUnit == PlannerClockUnit.hour) {
-        widget.onHourChanged(digit == 0 ? 12 : digit);
-      } else {
-        // 0â†’0ë¶„, 1â†’5ë¶„, 2â†’10ë¶„, ... ìˆ«ìž * 5
-        widget.onMinuteChanged((digit * 5) % 60);
-      }
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
   }
 
   void _handleClockInteraction(Offset localPosition, Size size) {
@@ -374,17 +389,19 @@ class _ClockPreviewState extends State<_ClockPreview> {
     final dy = localPosition.dy - center.dy;
     final distance = math.sqrt(dx * dx + dy * dy);
 
+    // Determine which hand is being dragged based on distance from center
+    // Hour hand: shorter radius (< 0.5 of clock radius)
+    // Minute hand: longer radius (>= 0.5 of clock radius)
     final radius = size.width / 2 * 0.84;
     final hourRadius = radius * 0.45;
     final minuteRadius = radius * 0.68;
 
-    // í´ë¦­ ìœ„ì¹˜ê°€ ë¶„ì¹¨ ê¶¤ë„ì— ë” ê°€ê¹Œìš°ë©´ ë¶„, ì‹œì¹¨ ê¶¤ë„ì— ë” ê°€ê¹Œìš°ë©´ ì‹œ
-    final PlannerClockUnit unit =
-        (distance - minuteRadius).abs() < (distance - hourRadius).abs()
-            ? PlannerClockUnit.minute
-            : PlannerClockUnit.hour;
-
-    widget.onActiveUnitChanged(unit);
+    // Determine which hand to adjust based on proximity
+    if ((distance - minuteRadius).abs() < (distance - hourRadius).abs()) {
+      _draggingUnit = PlannerClockUnit.minute;
+    } else {
+      _draggingUnit = PlannerClockUnit.hour;
+    }
 
     var angle = math.atan2(dy, dx);
     angle = angle - (-math.pi / 2);
@@ -396,7 +413,7 @@ class _ClockPreviewState extends State<_ClockPreview> {
       angle -= 2 * math.pi;
     }
 
-    if (unit == PlannerClockUnit.hour) {
+    if (_draggingUnit == PlannerClockUnit.hour) {
       int hour = ((angle / (2 * math.pi)) * 12).round();
       if (hour == 0) hour = 12;
       if (hour == 13) hour = 1;
@@ -416,7 +433,7 @@ class _ClockPreviewState extends State<_ClockPreview> {
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
 
-        return Focus(
+        return KeyboardListener(
           focusNode: _focusNode,
           onKeyEvent: _handleKeyEvent,
           child: GestureDetector(
