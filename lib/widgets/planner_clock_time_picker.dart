@@ -26,6 +26,10 @@ class PlannerClockTime {
       minute: minute ?? this.minute,
     );
   }
+
+  String format(BuildContext context) {
+    return TimeOfDay(hour: hour, minute: minute).format(context);
+  }
 }
 
 Future<PlannerClockTime?> showPlannerClockTimePicker({

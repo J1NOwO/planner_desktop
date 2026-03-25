@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'month_picker_dialog.dart';
 
-class MonthCalendar<T> extends StatelessWidget {
+class MonthCalendar<T> extends StatefulWidget {
   const MonthCalendar({
     super.key,
     required this.displayedMonth,
@@ -36,6 +36,19 @@ class MonthCalendar<T> extends StatelessWidget {
   final bool showWeekdayHeader;
   final String languageCode;
 
+  @override
+  State<MonthCalendar<T>> createState() => _MonthCalendarState<T>();
+}
+
+class _MonthCalendarState<T> extends State<MonthCalendar<T>> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   static const List<String> _weekdaysEn = [
     'Sun',
     'Mon',
@@ -60,11 +73,11 @@ class MonthCalendar<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final firstDayOfMonth =
-        DateTime(displayedMonth.year, displayedMonth.month, 1);
+        DateTime(widget.displayedMonth.year, widget.displayedMonth.month, 1);
     final startOffset = firstDayOfMonth.weekday % 7;
     final gridStart = firstDayOfMonth.subtract(Duration(days: startOffset));
     final weekdays =
-        languageCode.toLowerCase().startsWith('ko') ? _weekdaysKo : _weekdaysEn;
+        widget.languageCode.toLowerCase().startsWith('ko') ? _weekdaysKo : _weekdaysEn;
 
     return Card(
       clipBehavior: Clip.hardEdge,
@@ -79,7 +92,7 @@ class MonthCalendar<T> extends StatelessWidget {
             final verticalSpacing = compact ? 4.0 : 8.0;
             final headerHeight = compact ? 44.0 : 52.0;
             final weekdayHeight =
-                showWeekdayHeader ? (compact ? 20.0 : 28.0) : 0.0;
+                widget.showWeekdayHeader ? (compact ? 20.0 : 28.0) : 0.0;
 
             final availableWidth = math.max(320.0, constraints.maxWidth);
             final availableHeight = math.max(300.0, constraints.maxHeight);
@@ -100,36 +113,36 @@ class MonthCalendar<T> extends StatelessWidget {
             return Column(
               children: [
                 _MonthHeader(
-                  displayedMonth: displayedMonth,
-                  languageCode: languageCode,
+                  displayedMonth: widget.displayedMonth,
+                  languageCode: widget.languageCode,
                   height: headerHeight,
                   onPrev: () {
-                    onMonthChanged(
-                      DateTime(displayedMonth.year, displayedMonth.month - 1),
+                    widget.onMonthChanged(
+                      DateTime(widget.displayedMonth.year, widget.displayedMonth.month - 1),
                     );
                   },
                   onNext: () {
-                    onMonthChanged(
-                      DateTime(displayedMonth.year, displayedMonth.month + 1),
+                    widget.onMonthChanged(
+                      DateTime(widget.displayedMonth.year, widget.displayedMonth.month + 1),
                     );
                   },
                   onOpenPicker: () async {
                     final picked = await showDialog<DateTime>(
                       context: context,
                       builder: (_) => MonthPickerDialog(
-                        initialYear: displayedMonth.year,
-                        initialMonth: displayedMonth.month,
-                        lang: languageCode,
+                        initialYear: widget.displayedMonth.year,
+                        initialMonth: widget.displayedMonth.month,
+                        lang: widget.languageCode,
                       ),
                     );
 
                     if (picked != null) {
-                      onMonthYearPicked(picked.year, picked.month);
+                      widget.onMonthYearPicked(picked.year, picked.month);
                     }
                   },
                 ),
                 const SizedBox(height: 8),
-                if (showWeekdayHeader)
+                if (widget.showWeekdayHeader)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: SizedBox(
@@ -164,9 +177,10 @@ class MonthCalendar<T> extends StatelessWidget {
                   ),
                 Expanded(
                   child: Scrollbar(
+                    controller: _scrollController,
                     thumbVisibility: true,
                     child: GridView.builder(
-                      primary: false,
+                      controller: _scrollController,
                       physics: const ClampingScrollPhysics(),
                       padding: EdgeInsets.zero,
                       itemCount: 42,
@@ -178,9 +192,9 @@ class MonthCalendar<T> extends StatelessWidget {
                       ),
                       itemBuilder: (context, index) {
                         final day = gridStart.add(Duration(days: index));
-                        final isCurrentMonth = day.month == displayedMonth.month;
-                        final isSelected = _sameDay(day, selectedDate);
-                        final isToday = _sameDay(day, todayDate);
+                        final isCurrentMonth = day.month == widget.displayedMonth.month;
+                        final isSelected = _sameDay(day, widget.selectedDate);
+                        final isToday = _sameDay(day, widget.todayDate);
                         final dayItems = _itemsForDay(day);
 
                         return _CalendarDayCell<T>(
@@ -189,11 +203,11 @@ class MonthCalendar<T> extends StatelessWidget {
                           isSelected: isSelected,
                           isToday: isToday,
                           items: dayItems,
-                          itemPreviewBuilder: itemPreviewBuilder,
-                          itemColorBuilder: itemColorBuilder,
-                          maxPreviewCount: compact ? 0 : maxPreviewCount,
+                          itemPreviewBuilder: widget.itemPreviewBuilder,
+                          itemColorBuilder: widget.itemColorBuilder,
+                          maxPreviewCount: compact ? 0 : widget.maxPreviewCount,
                           compactMode: compact,
-                          onTap: () => onDateSelected(day),
+                          onTap: () => widget.onDateSelected(day),
                         );
                       },
                     ),
@@ -208,15 +222,15 @@ class MonthCalendar<T> extends StatelessWidget {
   }
 
   List<T> _itemsForDay(DateTime day) {
-    final filtered = items.where((item) {
-      final date = itemDateBuilder(item);
+    final filtered = widget.items.where((item) {
+      final date = widget.itemDateBuilder(item);
       return _sameDay(date, day);
     }).toList();
 
-    if (itemStartDateTimeBuilder != null) {
+    if (widget.itemStartDateTimeBuilder != null) {
       filtered.sort((a, b) {
-        return itemStartDateTimeBuilder!(a)
-            .compareTo(itemStartDateTimeBuilder!(b));
+        return widget.itemStartDateTimeBuilder!(a)
+            .compareTo(widget.itemStartDateTimeBuilder!(b));
       });
     }
 
